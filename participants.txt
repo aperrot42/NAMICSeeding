@@ -3,3 +3,4 @@
 #   seeding fusion     #
 ########################
 Antonin Perrot-Audet, Megason Lab, HMS
+Arnaud Gelas, Megason Lab, HMS
