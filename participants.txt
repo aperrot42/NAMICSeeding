@@ -1,0 +1,5 @@
+########################
+# NAMIC summer project #
+#   seeding fusion     #
+########################
+Antonin Perrot-Audet, Megason Lab, HMS
