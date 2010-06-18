@@ -3,3 +3,18 @@ This repository has been created for the NAMIC summer week project.
 The project we will be working on is described here :
 http://www.na-mic.org/Wiki/index.php/Seedings_results_comparison
 
+
+#CODING STYLE :
+ITK coding style (KWSTYLE)
+Please check-out this address for the coding style :
+http://sourceforge.net/apps/trac/gofigure2/wiki/CodingStyle
+
+
+#COMMIT STYLE :
+You should use a prefix for any commit :
+ENH : any new functionnality
+FIX : any bugfix
+BUG : any discovered bug
+STYLE : any style modification (code comments is considered as STYLE)
+REP : any repository modification
+HELP : any information file (not code, README for instance...)
