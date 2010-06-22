@@ -2,6 +2,7 @@
 SET( NAMICSEED_EXAMPLE_DIR
   DistanceLoG
   Median
+  LocalMaxima
   )
 
 FOREACH( var ${NAMICSEED_EXAMPLE_DIR} )
