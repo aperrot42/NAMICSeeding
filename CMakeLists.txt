@@ -81,24 +81,9 @@ ENDIF( ITK_FOUND )
 # PROJECT STRUCTURE
 #-------------------------------------------------------------------------
 INCLUDE_DIRECTORIES( BEFORE
-  ${ITK_INCLUDES}
   ${NAMICSEED_SOURCE_DIR}/Code/
-  ${NAMICSEED_BINARY_DIRECTORY}/Code/
   ${NAMICSEED_SOURCE_DIR}/Code/Filters/
-  ${NAMICSEED_BINARY_DIRECTORY}/Code/Filters/
   )
 
-ADD_SUBDIRECTORY( Code )
-
-
-
-#-------------------------------------------------------------------------
-# Examples and tests
-#-------------------------------------------------------------------------
-OPTION( BUILD_EXAMPLES "Build Examples" ON )
-
-IF( BUILD_EXAMPLES )
-  ADD_SUBDIRECTORY( Examples )
-ENDIF( BUILD_EXAMPLES )
-
+ADD_SUBDIRECTORY( Examples )
 
