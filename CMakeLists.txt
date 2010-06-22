@@ -1,9 +1,9 @@
-PROJECT(NAMICSEEDING)
+PROJECT(NAMICSEED)
 
 # CMake >= 2.6 has to be installed (fighting for progress)
 CMAKE_MINIMUM_REQUIRED( VERSION 2.6 )
 
-MESSAGE( STATUS "NAMIC SEEDING" )
+MESSAGE( STATUS "NAMIC SEED" )
 
 # On Visual Studio 8 MS deprecated C. This removes all 1.276E1265 security
 # warnings. Copied from ITK CMakeLists.
@@ -57,13 +57,6 @@ LINK_DIRECTORIES(
   ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
   )
 
-INCLUDE_DIRECTORIES(
-  ${NAMICSEED_SOURCE_DIR}/Code/
-  ${NAMICSEED_BINARY_DIRECTORY}/Code/
-  ${NAMICSEED_SOURCE_DIR}/Code/Filters/
-  ${NAMICSEED_BINARY_DIRECTORY}/Code/Filters/
-  )
-
 
 #--------------------------------------------------------------------------
 # Define TESTING_DATA_PATH
@@ -84,11 +77,17 @@ IF( ITK_FOUND )
 ENDIF( ITK_FOUND )
 
 
-
-
 #-------------------------------------------------------------------------
 # PROJECT STRUCTURE
 #-------------------------------------------------------------------------
+INCLUDE_DIRECTORIES( BEFORE
+  ${ITK_INCLUDES}
+  ${NAMICSEED_SOURCE_DIR}/Code/
+  ${NAMICSEED_BINARY_DIRECTORY}/Code/
+  ${NAMICSEED_SOURCE_DIR}/Code/Filters/
+  ${NAMICSEED_BINARY_DIRECTORY}/Code/Filters/
+  )
+
 ADD_SUBDIRECTORY( Code )
 
 
