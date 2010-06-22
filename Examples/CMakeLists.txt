@@ -1,8 +1,9 @@
 #list of example directories
 SET( NAMICSEED_EXAMPLE_DIR
   DistanceLoG
-  Median
+#  Median
   LocalMaxima
+  RadialVoting
   )
 
 FOREACH( var ${NAMICSEED_EXAMPLE_DIR} )

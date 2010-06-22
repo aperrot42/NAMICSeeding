@@ -34,8 +34,8 @@ MultiScaleLoGDistanceImageFilter
 ::MultiScaleLoGDistanceImageFilter()
 {
   // default sigma min-max in world coordinate?
-  m_SigmaMin = 0.2;
-  m_SigmaMax = 2.0;
+  m_SigmaMin = 2.0;
+  m_SigmaMax = 4.5;
   m_NumberOfSigmaSteps = 4;
   m_ComputeOutsideForeground = false;
 

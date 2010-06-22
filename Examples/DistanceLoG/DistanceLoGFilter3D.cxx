@@ -76,7 +76,9 @@ int main(int argc, char* argv [] )
   SegmentReaderType::Pointer readerFore = SegmentReaderType::New();
   readerFore->SetFileName ( argv[2] );
   readerFore->Update();
-
+  
+  // set the spacing of the foreground image to the spacing of the input
+  readerFore->GetOutput()->SetSpacing( reader->GetOutput()->GetSpacing() );
   //**************SIGNED SQUARE DISTANCE COMPUTING
   std::cout << "foreground distance map computing" << std::endl;
   DistanceFilterType::Pointer distanceFilter

@@ -17,9 +17,9 @@
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 #include "itkRescaleIntensityImageFilter.h"
-#include "itkSignedMaurerDistanceMapImageFilter.h"
+#include "itkMedianImageFilter.h"
 #include "itkNumericTraits.h"
-#include "itkMultiScaleLoGDistanceImageFilter.h"
+
 
 int main(int argc, char* argv [] )
 {
@@ -27,17 +27,14 @@ int main(int argc, char* argv [] )
     {
     std::cerr << "Missing Parameters: "
               << argv[0] << std::endl
-              << "inputImage foregroundImage outputImage"
-              << " [SigmaMin SigmaMax NumberOfScales]" << std::endl
+              << "inputImage outputImage"
+              << " [NeighborhoodSize]" << std::endl
               << "Allow outside of foreground detection (0-1)"<< std::endl;
     return EXIT_FAILURE;
     }
 
   // default sigma min-max in world coordinate?
-  float m_SigmaMin = (float)atof(argv[4]);
-  float m_SigmaMax = (float)atof(argv[5]);
-  int m_NumberOfSigmaSteps = atoi(argv[6]);
-  bool m_OutsideComputation = static_cast<bool>(atoi(argv[7]));
+  int m_NeighbSize = (int)atof(argv[4]);
 
   // Define the dimension of the images
   const int Dimension = 3;
@@ -45,23 +42,16 @@ int main(int argc, char* argv [] )
   // Declare the types of the images
   typedef unsigned char       InputPixelType;
   typedef itk::Image< InputPixelType, Dimension>  InputImageType;
-  typedef unsigned int        SegmentPixelType;
-  typedef itk::Image< SegmentPixelType, Dimension>   SegmentImageType;
   typedef float               OutputPixelType;
   typedef itk::Image< OutputPixelType, Dimension> OutputImageType;
 
   // input image reader
   typedef itk::ImageFileReader< InputImageType  > ImageReaderType;
-  // foreground image reader
-  typedef itk::ImageFileReader< SegmentImageType  > SegmentReaderType;
-
-  // distance function filter
-  typedef itk::SignedMaurerDistanceMapImageFilter< SegmentImageType , OutputImageType >
-    DistanceFilterType;
 
   // LoG filter
-  typedef itk::MultiScaleLoGDistanceImageFilter< InputImageType, OutputImageType,OutputImageType >
-    MultiScaleLoGDistanceFilterType;
+  typedef itk::MedianImageFilter< InputImageType, OutputImageType >
+    MedianImageFilterType;
+    
   typedef itk::ImageFileWriter< OutputImageType > WriterType;
 
 
@@ -70,12 +60,6 @@ int main(int argc, char* argv [] )
   ImageReaderType::Pointer reader = ImageReaderType::New();
   reader->SetFileName ( argv[1] );
   reader->Update();
-
-  //*************READING foreground
-  std::cout << "Reading  foreground" << std::endl;
-  SegmentReaderType::Pointer readerFore = SegmentReaderType::New();
-  readerFore->SetFileName ( argv[2] );
-  readerFore->Update();
 
   //**************SIGNED SQUARE DISTANCE COMPUTING
   std::cout << "foreground distance map computing" << std::endl;
