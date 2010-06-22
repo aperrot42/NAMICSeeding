@@ -1,0 +1,14 @@
+SET( NAMICSEED_EXAMPLE_SRC
+  DistanceLoGFilter3D.cxx
+  )
+
+
+FOREACH( var ${NAMICSEED_EXAMPLE_SRC} )
+
+  ADD_EXECUTABLE( ${var} ${var} )
+  TARGET_LINK_LIBRARIES( ${var}
+  NAMICFiltersLib  
+  )
+
+
+ENDFOREACH( var ${NAMICSEED_EXAMPLE_SRC} )
