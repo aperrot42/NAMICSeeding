@@ -3,7 +3,7 @@ SET( NAMICSEED_EXAMPLE_DIR
   DistanceLoG
 #  Median
   LocalMaxima
-  RadialVoting
+#  RadialVoting
   )
 
 FOREACH( var ${NAMICSEED_EXAMPLE_DIR} )

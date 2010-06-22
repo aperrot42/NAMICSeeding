@@ -25,7 +25,7 @@
 
 int main(int argc, char* argv [] )
 {
-  if ( argc != 4 )
+  if ( argc != 5 )
     {
     std::cerr << "Missing Parameters: "
               << argv[0] << std::endl
@@ -33,7 +33,7 @@ int main(int argc, char* argv [] )
               << " [SmallestCellRadius]" << std::endl;
     return EXIT_FAILURE;
     }
-    
+
   // smallest cell radius
   float m_SigmaMin = (float)atof(argv[4]);
 
@@ -62,16 +62,16 @@ int main(int argc, char* argv [] )
   typedef itk::ImageRegionIterator<OutputImageType>  IteratorType;
 
 
-  // neighborhood iterators 
+  // neighborhood iterators
   typedef itk::ConstNeighborhoodIterator<OutputImageType> NeighborhoodIteratorType;
-  
+
 
 
   std::cout << "reading input image" << std::endl;
   ImageReaderType::Pointer reader = ImageReaderType::New();
   reader->SetFileName ( argv[1] );
   reader->Update();
-  
+
 
   //EXTRACTING SEEDS (local maximas)
 
@@ -82,8 +82,8 @@ int main(int argc, char* argv [] )
   maxFilter->Update();
 
   //filling seeds map
-  
-  
+
+
   std::cout << "rescaling maximas" << std::endl;
   RescaleFilterType::Pointer rescaleMax = RescaleFilterType::New();
   rescaleMax->SetInput( maxFilter->GetOutput() );
@@ -91,12 +91,13 @@ int main(int argc, char* argv [] )
   rescaleMax->SetOutputMaximum( 1.0 );
   rescaleMax->SetOutputMinimum( rescaleMax->GetInputMinimum() );
   rescaleMax->Update();
-  
 
 
+
+  std::cout << "filtering out the spurious seeds" << std::endl;
   // iterator over the local Maximas output
   OutputImageType::Pointer LocalMaxImage = rescaleMax->GetOutput();
-  
+
   IteratorType it(LocalMaxImage ,
     LocalMaxImage->GetLargestPossibleRegion());
   it.GoToBegin();
@@ -104,7 +105,7 @@ int main(int argc, char* argv [] )
 
   itk::Neighborhood<OutputPixelType, Dimension> nhood;
   NeighborhoodIteratorType::RadiusType radius;
-  
+
   NeighborhoodIteratorType NIt(radius, LocalMaxImage, LocalMaxImage->GetRequestedRegion());
   NeighborhoodIteratorType::IndexType loc;
 
@@ -128,41 +129,41 @@ int main(int argc, char* argv [] )
   // filtering out the spurious seeds (retains biggest seed of a region)
   while( !it.IsAtEnd() )
     {
-    
+
     current_max = 0;
 
     // if the current pixel is a maximum, then :
     if ( it.Value() > 0 )
       {
       current_max = it.Value();
-      
-      // Do this 	 
+
+      // Do this
       //Set co ordinates
       loc = it.GetIndex();
       NIt.SetLocation(loc);
-      nhood = NIt.GetNeighborhood();
+      //nhood = NIt.GetNeighborhood();
 
       for (int i = 0; i<nhood.Size(); ++i)
         {
-	      off_set = nhood.GetOffset(i);
-	      neighbor[0] = loc[0] + off_set[0];
+        off_set = nhood.GetOffset(i);
+        neighbor[0] = loc[0] + off_set[0];
         neighbor[1] = loc[1] + off_set[1];
         neighbor[2] = loc[2] + off_set[2];
-	
+
         //Check Boundary Conditions
-	
+
         if(neighbor[0]<1) neighbor[0] =0;
         if(neighbor[1]<1) neighbor[1] =0;
         if(neighbor[2]<1) neighbor[2] =0;
-				
+
         if(neighbor[0]>=imagesize[0]) neighbor[0] =imagesize[0]-1;
         if(neighbor[1]>=imagesize[1]) neighbor[1] =imagesize[1]-1;
         if(neighbor[2]>=imagesize[2]) neighbor[2] =imagesize[2]-1;
-							
+
         pixelIndex[0] = neighbor[0];
         pixelIndex[1] = neighbor[1];
         pixelIndex[2] = neighbor[2];
-        
+
 
         if (LocalMaxImage->GetPixel(pixelIndex) > 0)
           {
@@ -171,7 +172,7 @@ int main(int argc, char* argv [] )
             current_max = LocalMaxImage->GetPixel(pixelIndex);
             it.Value()=0;
             }
-          else 
+          else
             {
             LocalMaxImage->SetPixel(pixelIndex,0);
             }
@@ -179,12 +180,12 @@ int main(int argc, char* argv [] )
         }
       }
     }
-  
+
   // write out the seeding image
   ImageWriterType::Pointer writer = ImageWriterType::New();
   writer->SetFileName(argv[2]);
   writer->SetInput ( LocalMaxImage );
-  
+
   try
     {
     writer->Update();
@@ -195,15 +196,15 @@ int main(int argc, char* argv [] )
     return EXIT_FAILURE;
     }
 
-  
+
   /*
-  // filling a vector with seeds 
+  // filling a vector with seeds
   std::cout << "filling seeds map" << std::endl;
   typedef OutputImageType::IndexType InputImageIndexType;
   InputImageIndexType idx;
   // iterator over the local Maximas output
   it.GoToBegin();
-  
+
   // vector of pair confidence-coordinate for each seed
   typedef std::pair< float, InputImageIndexType > seed;
   std::vector< seed > seeds;
