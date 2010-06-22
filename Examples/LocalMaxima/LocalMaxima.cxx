@@ -19,7 +19,8 @@
 #include "itkNumericTraits.h"
 #include "itkMultiScaleLoGDistanceImageFilter.h"
 #include "itkValuedRegionalMaximaImageFilter.h"
-#include "itkImageRegionConstIterator.h"
+#include "itkImageRegionIterator.h"
+#include "itkConstNeighborhoodIterator.h"
 #include "itkRescaleIntensityImageFilter.h"
 
 int main(int argc, char* argv [] )
@@ -49,40 +50,28 @@ int main(int argc, char* argv [] )
 
   // input image reader
   typedef itk::ImageFileReader< InputImageType  > ImageReaderType;
-  typedef itk::RescaleIntensityImageFilter<  InputImageType , OutputImageType >
-    RescaleInputFilterType;
-
-  // LoG filter
-  typedef itk::MultiScaleLoGDistanceImageFilter< OutputImageType, OutputImageType, OutputImageType >
-    MultiScaleLoGDistanceFilterType;
-  typedef itk::ImageFileWriter< OutputImageType > WriterType;
+  // seed writer
+  typedef itk::ImageFileWriter< OutputImageType > ImageWriterType;
 
 
   //Seed writing
-  typedef itk::ValuedRegionalMaximaImageFilter< OutputImageType,OutputImageType >
+  typedef itk::ValuedRegionalMaximaImageFilter< InputImageType,OutputImageType >
     FilterType;
   typedef itk::RescaleIntensityImageFilter<  OutputImageType, OutputImageType >
     RescaleFilterType;
-  typedef itk::ImageRegionConstIterator<OutputImageType>  ConstIteratorType;
+  typedef itk::ImageRegionIterator<OutputImageType>  IteratorType;
 
-  //*************READING image
+
+  // neighborhood iterators 
+  typedef itk::ConstNeighborhoodIterator<OutputImageType> NeighborhoodIteratorType;
+  
+
+
   std::cout << "reading input image" << std::endl;
   ImageReaderType::Pointer reader = ImageReaderType::New();
   reader->SetFileName ( argv[1] );
   reader->Update();
   
-
-  try
-    {
-    writer->Update();
-    }
-  catch( itk::ExceptionObject & err )
-    {
-    std::cerr << "Exception caught: " << err << std::endl;
-    return EXIT_FAILURE;
-    }
-  //*****************
-
 
   //EXTRACTING SEEDS (local maximas)
 
@@ -94,7 +83,7 @@ int main(int argc, char* argv [] )
 
   //filling seeds map
   
-  /*
+  
   std::cout << "rescaling maximas" << std::endl;
   RescaleFilterType::Pointer rescaleMax = RescaleFilterType::New();
   rescaleMax->SetInput( maxFilter->GetOutput() );
@@ -102,23 +91,23 @@ int main(int argc, char* argv [] )
   rescaleMax->SetOutputMaximum( 1.0 );
   rescaleMax->SetOutputMinimum( rescaleMax->GetInputMinimum() );
   rescaleMax->Update();
-  */
-
-
+  
 
 
   // iterator over the local Maximas output
   OutputImageType::Pointer LocalMaxImage = rescaleMax->GetOutput();
   
-  ConstIteratorType it(LocalMaxImage ,
+  IteratorType it(LocalMaxImage ,
     LocalMaxImage->GetLargestPossibleRegion());
   it.GoToBegin();
 
 
-  itk::Neighborhood<OutputPixelType, Dimension> nhood;	
-  itk::NeighborhoodIterator<OutputImageType> NIt(radius, LocalMaxImage, LocalMaxImage->GetRequestedRegion());
-  itk::NeighborhoodIterator<OutputImageType>::IndexType loc;
+  itk::Neighborhood<OutputPixelType, Dimension> nhood;
   NeighborhoodIteratorType::RadiusType radius;
+  
+  NeighborhoodIteratorType NIt(radius, LocalMaxImage, LocalMaxImage->GetRequestedRegion());
+  NeighborhoodIteratorType::IndexType loc;
+
   itk::Offset<3> off_set;
 
   OutputImageType::SpacingType m_Spacing;
@@ -127,11 +116,14 @@ int main(int argc, char* argv [] )
   m_Spacing = LocalMaxImage->GetSpacing();
 
   // Set radious to min scale
-  radius[0] = static_cast<NeighborhoodIteratorType>( m_SigmaMin/m_Spacing[0]) ; // radius in x
-  radius[1] = static_cast<NeighborhoodIteratorType>( m_SigmaMin/m_Spacing[1]) ; // y
-  radius[2] = static_cast<NeighborhoodIteratorType>( m_SigmaMin/m_Spacing[2]) ; // z
+  radius[0] = static_cast<unsigned int>( m_SigmaMin/m_Spacing[0]) ; // radius in x
+  radius[1] = static_cast<unsigned int>( m_SigmaMin/m_Spacing[1]) ; // y
+  radius[2] = static_cast<unsigned int>( m_SigmaMin/m_Spacing[2]) ; // z
 
-
+  int current_max;
+  std::vector<OutputPixelType> neighbor(Dimension);
+  OutputImageType::SizeType imagesize = LocalMaxImage->GetLargestPossibleRegion().GetSize();
+  OutputImageType::IndexType pixelIndex;
 
   // filtering out the spurious seeds (retains biggest seed of a region)
   while( !it.IsAtEnd() )
@@ -187,27 +179,29 @@ int main(int argc, char* argv [] )
         }
       }
     }
-
-
-
-
-
-
   
   // write out the seeding image
+  ImageWriterType::Pointer writer = ImageWriterType::New();
   writer->SetFileName(argv[2]);
-  writer->SetInput ( rescaleMax->GetOutput() );
-  writer->Update();
+  writer->SetInput ( LocalMaxImage );
+  
+  try
+    {
+    writer->Update();
+    }
+  catch( itk::ExceptionObject & err )
+    {
+    std::cerr << "Exception caught: " << err << std::endl;
+    return EXIT_FAILURE;
+    }
 
   
-  
+  /*
   // filling a vector with seeds 
   std::cout << "filling seeds map" << std::endl;
   typedef OutputImageType::IndexType InputImageIndexType;
   InputImageIndexType idx;
   // iterator over the local Maximas output
-  ConstIteratorType it(rescaleMax->GetOutput() ,
-    rescaleMax->GetOutput()->GetLargestPossibleRegion());
   it.GoToBegin();
   
   // vector of pair confidence-coordinate for each seed
@@ -241,7 +235,7 @@ int main(int argc, char* argv [] )
     outfile << std::endl;
     }
   outfile.close();
-
+*/
 
   return EXIT_SUCCESS;
 }
