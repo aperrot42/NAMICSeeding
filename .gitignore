@@ -3,4 +3,6 @@ BUILD
 BUILD/*
 Dataset
 Dataset/*
+*.DS_Store
+*.txt.user
 
