@@ -20,8 +20,10 @@
 #include "itkMultiScaleLoGDistanceImageFilter.h"
 #include "itkValuedRegionalMaximaImageFilter.h"
 #include "itkImageRegionIterator.h"
-#include "itkConstNeighborhoodIterator.h"
 #include "itkRescaleIntensityImageFilter.h"
+#include "itkConstNeighborhoodIterator.h"
+#include "itkConstantBoundaryCondition.h"
+#include "itkThresholdImageFilter.h"
 
 int main(int argc, char* argv [] )
 {
@@ -41,29 +43,31 @@ int main(int argc, char* argv [] )
   const int Dimension = 3;
 
   // Declare the types of the images
-  typedef unsigned char       InputPixelType;
+  typedef float       InputPixelType;
   typedef itk::Image< InputPixelType, Dimension>  InputImageType;
-  typedef unsigned int        SegmentPixelType;
-  typedef itk::Image< SegmentPixelType, Dimension>   SegmentImageType;
-  typedef float               OutputPixelType;
+
+  typedef unsigned char               OutputPixelType;
   typedef itk::Image< OutputPixelType, Dimension> OutputImageType;
 
   // input image reader
   typedef itk::ImageFileReader< InputImageType  > ImageReaderType;
   // seed writer
   typedef itk::ImageFileWriter< OutputImageType > ImageWriterType;
-
+  typedef itk::ThresholdImageFilter<InputImageType> ThresholdFilterType;
 
   //Seed writing
-  typedef itk::ValuedRegionalMaximaImageFilter< InputImageType,OutputImageType >
+  typedef itk::ValuedRegionalMaximaImageFilter< InputImageType,InputImageType >
     FilterType;
-  typedef itk::RescaleIntensityImageFilter<  OutputImageType, OutputImageType >
+  typedef itk::RescaleIntensityImageFilter<  InputImageType, OutputImageType >
     RescaleFilterType;
   typedef itk::ImageRegionIterator<OutputImageType>  IteratorType;
 
 
   // neighborhood iterators
-  typedef itk::ConstNeighborhoodIterator<OutputImageType> NeighborhoodIteratorType;
+  typedef itk::ConstantBoundaryCondition< OutputImageType >
+    ConstantBoundaryType;
+  typedef itk::NeighborhoodIterator< OutputImageType, ConstantBoundaryType >
+    NeighborhoodIteratorType;
 
 
 
@@ -81,105 +85,80 @@ int main(int argc, char* argv [] )
   maxFilter->SetFullyConnected( true );
   maxFilter->Update();
 
-  //filling seeds map
+  //threshold output of the filter for keeping only representative max
+  std::cout << "thresholding maximas" << std::endl;
+  ThresholdFilterType::Pointer threshFilter = ThresholdFilterType::New();
+  threshFilter->SetInput( maxFilter->GetOutput() ) ;
+  threshFilter->SetOutsideValue	( 0 );
+  threshFilter->ThresholdBelow( static_cast<InputPixelType>(0.01) );
+  threshFilter->Update();
 
-
+  //rescale seeds "confidence" in 0-255 (Uchar)
   std::cout << "rescaling maximas" << std::endl;
   RescaleFilterType::Pointer rescaleMax = RescaleFilterType::New();
-  rescaleMax->SetInput( maxFilter->GetOutput() );
-  rescaleMax->Update();
-  rescaleMax->SetOutputMaximum( 1.0 );
-  rescaleMax->SetOutputMinimum( rescaleMax->GetInputMinimum() );
+  rescaleMax->SetInput( threshFilter->GetOutput() );
+  rescaleMax->SetOutputMaximum( 255 );
+  rescaleMax->SetOutputMinimum( 0 );
   rescaleMax->Update();
 
 
+  // FILTERING SEEDS
 
   std::cout << "filtering out the spurious seeds" << std::endl;
   // iterator over the local Maximas output
   OutputImageType::Pointer LocalMaxImage = rescaleMax->GetOutput();
 
-  IteratorType it(LocalMaxImage ,
-    LocalMaxImage->GetLargestPossibleRegion());
-  it.GoToBegin();
-
-
-  itk::Neighborhood<OutputPixelType, Dimension> nhood;
+  // definition of the neighborhood
   NeighborhoodIteratorType::RadiusType radius;
-
-  NeighborhoodIteratorType NIt(radius, LocalMaxImage, LocalMaxImage->GetRequestedRegion());
-  NeighborhoodIteratorType::IndexType loc;
-
-  itk::Offset<3> off_set;
-
-  OutputImageType::SpacingType m_Spacing;
-
-  // define the radius of te neighborhood :
-  m_Spacing = LocalMaxImage->GetSpacing();
-
   // Set radious to min scale
+  OutputImageType::SpacingType m_Spacing;
+  m_Spacing = LocalMaxImage->GetSpacing();
   radius[0] = static_cast<unsigned int>( m_SigmaMin/m_Spacing[0]) ; // radius in x
   radius[1] = static_cast<unsigned int>( m_SigmaMin/m_Spacing[1]) ; // y
-  radius[2] = static_cast<unsigned int>( m_SigmaMin/m_Spacing[2]) ; // z
+  radius[2] = static_cast<unsigned int>( m_SigmaMin/m_Spacing[2]) ;
+  std::cout << radius[0] << " "
+            << radius[1] << " "
+            << radius[2] << std::endl;
+  NeighborhoodIteratorType Nit( radius, LocalMaxImage,
+    LocalMaxImage->GetRequestedRegion() );
 
-  int current_max;
-  std::vector<OutputPixelType> neighbor(Dimension);
-  OutputImageType::SizeType imagesize = LocalMaxImage->GetLargestPossibleRegion().GetSize();
-  OutputImageType::IndexType pixelIndex;
 
-  // filtering out the spurious seeds (retains biggest seed of a region)
-  while( !it.IsAtEnd() )
+  OutputPixelType curentMax;
+  bool m_pset;
+  unsigned int prevMax;
+  for (Nit.GoToBegin(); !Nit.IsAtEnd(); ++Nit)
     {
-
-    current_max = 0;
-
-    // if the current pixel is a maximum, then :
-    if ( it.Value() > 0 )
+    // if we are centered on a local maxima
+    if ( static_cast<OutputPixelType>((Nit.GetCenterPixel())) > static_cast<OutputPixelType>(0))
       {
-      current_max = it.Value();
-
-      // Do this
-      //Set co ordinates
-      loc = it.GetIndex();
-      NIt.SetLocation(loc);
-      //nhood = NIt.GetNeighborhood();
-
-      for (int i = 0; i<nhood.Size(); ++i)
+      std::cout << "f0";
+      curentMax = Nit.GetPixel(0);
+      prevMax = 0;
+      for (unsigned int indN = 1;indN < radius[0]*radius[1]*radius[2]; ++indN)
         {
-        off_set = nhood.GetOffset(i);
-        neighbor[0] = loc[0] + off_set[0];
-        neighbor[1] = loc[1] + off_set[1];
-        neighbor[2] = loc[2] + off_set[2];
-
-        //Check Boundary Conditions
-
-        if(neighbor[0]<1) neighbor[0] =0;
-        if(neighbor[1]<1) neighbor[1] =0;
-        if(neighbor[2]<1) neighbor[2] =0;
-
-        if(neighbor[0]>=imagesize[0]) neighbor[0] =imagesize[0]-1;
-        if(neighbor[1]>=imagesize[1]) neighbor[1] =imagesize[1]-1;
-        if(neighbor[2]>=imagesize[2]) neighbor[2] =imagesize[2]-1;
-
-        pixelIndex[0] = neighbor[0];
-        pixelIndex[1] = neighbor[1];
-        pixelIndex[2] = neighbor[2];
-
-
-        if (LocalMaxImage->GetPixel(pixelIndex) > 0)
+        if (Nit.GetPixel(indN) > curentMax)
           {
-          if(LocalMaxImage->GetPixel(pixelIndex) > current_max )
-            {
-            current_max = LocalMaxImage->GetPixel(pixelIndex);
-            it.Value()=0;
-            }
-          else
-            {
-            LocalMaxImage->SetPixel(pixelIndex,0);
-            }
+          // we use the uiet verion of setpixel
+          // (we can try to write in the padding)
+          Nit.SetPixel(prevMax, 0, m_pset);
+          curentMax = Nit.GetPixel(indN);
+          // we save the index of the curent max in the neighborhood
+          // in case we have to zero it (there is a bigger maxima)
+          prevMax = indN;
+          }
+        else
+          {
+          // if this pixel is not bigger than the previous maxima
+          Nit.SetPixel(indN, 0, m_pset);
           }
         }
       }
+    else
+      {
+      Nit.SetCenterPixel( 0 );
+      }
     }
+  std::cout << std::endl;
 
   // write out the seeding image
   ImageWriterType::Pointer writer = ImageWriterType::New();
@@ -197,16 +176,19 @@ int main(int argc, char* argv [] )
     }
 
 
-  /*
+
   // filling a vector with seeds
   std::cout << "filling seeds map" << std::endl;
-  typedef OutputImageType::IndexType InputImageIndexType;
-  InputImageIndexType idx;
+  typedef OutputImageType::IndexType OutputImageIndexType;
+  OutputImageIndexType idx;
   // iterator over the local Maximas output
+  IteratorType it(LocalMaxImage ,
+  LocalMaxImage->GetLargestPossibleRegion());
+  it.GoToBegin();
   it.GoToBegin();
 
   // vector of pair confidence-coordinate for each seed
-  typedef std::pair< float, InputImageIndexType > seed;
+  typedef std::pair< float, OutputImageIndexType > seed;
   std::vector< seed > seeds;
   std::vector< seed >::iterator loc;
 
@@ -214,7 +196,7 @@ int main(int argc, char* argv [] )
     {
     // if the current pixel is a maximum, then :
     if ( it.Value() > 0.1 )
-      seeds.push_back(std::pair< float, InputImageIndexType > ( it.Value(),it.GetIndex() ) );
+      seeds.push_back(std::pair< float, OutputImageIndexType > ( it.Value()/255,it.GetIndex() ) );
     }
 
 
@@ -234,9 +216,10 @@ int main(int argc, char* argv [] )
       outfile << ' ' << idx[i];
       }
     outfile << std::endl;
+    std::cout<<"w1";
     }
   outfile.close();
-*/
+
 
   return EXIT_SUCCESS;
 }

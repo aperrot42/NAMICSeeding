@@ -43,20 +43,20 @@ int main(int argc, char* argv [] )
   const int Dimension = 3;
 
   // Declare the types of the images
-  typedef unsigned char       InputPixelType;
+  typedef float       InputPixelType;
   typedef itk::Image< InputPixelType, Dimension>  InputImageType;
-  typedef unsigned int        SegmentPixelType;
-  typedef itk::Image< SegmentPixelType, Dimension>   SegmentImageType;
+  typedef unsigned int        MaskPixelType;
+  typedef itk::Image< MaskPixelType, Dimension>   MaskImageType;
   typedef float               OutputPixelType;
   typedef itk::Image< OutputPixelType, Dimension> OutputImageType;
 
   // input image reader
   typedef itk::ImageFileReader< InputImageType  > ImageReaderType;
   // foreground image reader
-  typedef itk::ImageFileReader< SegmentImageType  > SegmentReaderType;
+  typedef itk::ImageFileReader< MaskImageType  > SegmentReaderType;
 
   // distance function filter
-  typedef itk::SignedMaurerDistanceMapImageFilter< SegmentImageType , OutputImageType >
+  typedef itk::SignedMaurerDistanceMapImageFilter< MaskImageType , OutputImageType >
     DistanceFilterType;
 
   // LoG filter
@@ -65,21 +65,21 @@ int main(int argc, char* argv [] )
   typedef itk::ImageFileWriter< OutputImageType > WriterType;
 
 
-  //*************READING image
+  //READING image
   std::cout << "reading input image" << std::endl;
   ImageReaderType::Pointer reader = ImageReaderType::New();
   reader->SetFileName ( argv[1] );
   reader->Update();
 
-  //*************READING foreground
+  //READING foreground
   std::cout << "Reading  foreground" << std::endl;
   SegmentReaderType::Pointer readerFore = SegmentReaderType::New();
   readerFore->SetFileName ( argv[2] );
   readerFore->Update();
-  
+
   // set the spacing of the foreground image to the spacing of the input
   readerFore->GetOutput()->SetSpacing( reader->GetOutput()->GetSpacing() );
-  //**************SIGNED SQUARE DISTANCE COMPUTING
+  //SIGNED SQUARE DISTANCE COMPUTING
   std::cout << "foreground distance map computing" << std::endl;
   DistanceFilterType::Pointer distanceFilter
     = DistanceFilterType::New();
@@ -90,7 +90,7 @@ int main(int argc, char* argv [] )
   distanceFilter->SetBackgroundValue(itk::NumericTraits< OutputPixelType >::Zero );
   distanceFilter->Update();
 
-  //*************MULTISCALE LOG FILTERING
+  //MULTISCALE LOG FILTERING
   MultiScaleLoGDistanceFilterType::Pointer LoGFilter
                                = MultiScaleLoGDistanceFilterType::New();
   LoGFilter->SetInput( reader->GetOutput() ); // input image
@@ -102,7 +102,7 @@ int main(int argc, char* argv [] )
   LoGFilter->Update();
 
 
-  //**********WRITING
+  //WRITING
   WriterType::Pointer writer = WriterType::New();
   writer->SetFileName( argv[3] );
   writer->SetInput ( LoGFilter->GetOutput() );
@@ -116,7 +116,6 @@ int main(int argc, char* argv [] )
     std::cerr << "Exception caught: " << err << std::endl;
     return EXIT_FAILURE;
     }
-  //*****************
 
   return EXIT_SUCCESS;
 }

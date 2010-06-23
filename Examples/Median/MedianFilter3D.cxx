@@ -20,9 +20,10 @@
 #include "itkMedianImageFilter.h"
 #include "itkNumericTraits.h"
 
-
 int main(int argc, char* argv [] )
 {
+/*
+
   if ( argc < 8 )
     {
     std::cerr << "Missing Parameters: "
@@ -51,7 +52,7 @@ int main(int argc, char* argv [] )
   // LoG filter
   typedef itk::MedianImageFilter< InputImageType, OutputImageType >
     MedianImageFilterType;
-    
+
   typedef itk::ImageFileWriter< OutputImageType > WriterType;
 
 
@@ -99,7 +100,8 @@ int main(int argc, char* argv [] )
     return EXIT_FAILURE;
     }
   //*****************
-
+*/
   return EXIT_SUCCESS;
 }
+
 

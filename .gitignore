@@ -5,4 +5,6 @@ Dataset
 Dataset/*
 *.DS_Store
 *.txt.user
-
+CMakeCache.txt
+CMakeFiles/*
+CMakeFiles
