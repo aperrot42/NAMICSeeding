@@ -1,5 +1,7 @@
 SET( NAMICSEED_EXAMPLE_SRC
-  RadialVotingFilter3D
+ # RadialVotingFilter3D
+   RadialVoting.cpp
+   RadialVoting.h	
   )
 
 
