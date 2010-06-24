@@ -182,9 +182,7 @@ int main(int argc, char* argv [] )
   typedef OutputImageType::IndexType OutputImageIndexType;
   OutputImageIndexType idx;
   // iterator over the local Maximas output
-  IteratorType it(LocalMaxImage ,
-  LocalMaxImage->GetLargestPossibleRegion());
-  it.GoToBegin();
+  IteratorType it( LocalMaxImage , LocalMaxImage->GetLargestPossibleRegion() );
   it.GoToBegin();
 
   // vector of pair confidence-coordinate for each seed
@@ -195,8 +193,9 @@ int main(int argc, char* argv [] )
   while( !it.IsAtEnd() )
     {
     // if the current pixel is a maximum, then :
-    if ( it.Value() > 0.1 )
-      seeds.push_back(std::pair< float, OutputImageIndexType > ( it.Value()/255,it.GetIndex() ) );
+    if ( it.Value() > 0 )
+      seeds.push_back(std::pair< float, OutputImageIndexType > ( it.Value()/255.,it.GetIndex() ) );
+    ++it;
     }
 
 
