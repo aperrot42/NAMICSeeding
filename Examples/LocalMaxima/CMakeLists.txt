@@ -1,5 +1,6 @@
 SET( NAMICSEED_EXAMPLE_SRC
   LocalMaxima
+  LocalMaxima2D
   CombineSeeds
   )
 

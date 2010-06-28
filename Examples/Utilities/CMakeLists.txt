@@ -1,7 +1,8 @@
 SET( NAMICSEED_EXAMPLE_SRC
-  DistanceLoGFilter3D
-  DistanceLoGFilter2D
+  iminfo
+  setspacing
   )
+
 
 FOREACH( var ${NAMICSEED_EXAMPLE_SRC} )
 

@@ -63,7 +63,7 @@ MultiScaleLoGDistanceImageFilter
   // Zero the output
   outputImage->SetBufferedRegion( outputImage->GetRequestedRegion() );
   outputImage->Allocate();
-  outputImage->FillBuffer ( 0);//NumericTraits<OutputPixelType>::Zero );
+  outputImage->FillBuffer ( NumericTraits<OutputPixelType>::Zero );
 
   InputImageConstPointer inputImage = this->GetInput();
 
@@ -91,7 +91,7 @@ MultiScaleLoGDistanceImageFilter
 
 
 /**
- * Select maximal output of LoG accross cales,
+ * Select maximal output of LoG accross scales,
  * depending on the Signed Distance Map.
  */
 template <class InputImageType, class DistanceMapImageType, class OutputImageType >
@@ -128,16 +128,17 @@ MultiScaleLoGDistanceImageFilter
       {
       // if the current sigma is bellow 2*distancemap (<=>Sigma^2 < 4*distmap^2),
       // or if it is the first sigma :
-      if ( (m_SigmaSquare  <= 4*vcl_abs( sdfit.Value() ) ) || ( scaleLevel == 1) )
-        {
-        // we take the LoG
-        // if the output at this scale is larger than the previous value stored
-        // Note: the LoG of a bright blob is a negative value
-        if( ( oit.Value() < -( it.Value() ) ) || ( scaleLevel == 1) )
+        if ( (m_SigmaSquare  <= 4*vcl_abs( sdfit.Value() ) ) || ( scaleLevel == 1) )
           {
-          oit.Value() = -it.Value();
+          // we take the LoG
+          // if the output at this scale is larger than the previous value stored
+          // Note: the LoG of a bright blob is a negative value
+          if( ( oit.Value() < -( it.Value() ) ) || ( scaleLevel == 1) )
+            {
+            oit.Value() = -it.Value();
+            }
           }
-        }
+
       // next voxel
       ++oit;
       ++it;
@@ -161,8 +162,8 @@ MultiScaleLoGDistanceImageFilter
             oit.Value() = -(it.Value());
             }
           }
-        // next voxel
         }
+      // next voxel
       ++oit;
       ++it;
       ++sdfit;

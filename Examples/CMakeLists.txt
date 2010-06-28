@@ -4,6 +4,7 @@ SET( NAMICSEED_EXAMPLE_DIR
   Median
   LocalMaxima
 #  RadialVoting
+  Utilities
   )
 
 FOREACH( var ${NAMICSEED_EXAMPLE_DIR} )

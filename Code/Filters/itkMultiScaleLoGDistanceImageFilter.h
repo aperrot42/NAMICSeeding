@@ -83,6 +83,7 @@ public:
   /** Get if possible to compute outside of objects (in positive SDM regions)*/
   itkGetMacro(ComputeOutsideForeground, bool);
 
+
 protected:
   // constructor destructor, itk functions...
   MultiScaleLoGDistanceImageFilter();
